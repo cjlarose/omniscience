@@ -15,5 +15,7 @@ RUN yarn install
 # Bundle app source
 COPY . /usr/src/app
 
-EXPOSE 8000
+# Transpile
+RUN yarn run build
+
 CMD [ "yarn", "start" ]
