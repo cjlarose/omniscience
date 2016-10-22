@@ -1,0 +1,14 @@
+{
+  "name": "pivotal-ingestion",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node lib/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^1.6.3"
+  }
+}
