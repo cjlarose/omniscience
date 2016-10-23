@@ -19,4 +19,5 @@ COPY . /usr/src/app
 RUN yarn run build
 
 EXPOSE 9229
+VOLUME /data
 CMD [ "yarn", "start" ]
