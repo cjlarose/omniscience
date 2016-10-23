@@ -2,3 +2,5 @@ version: '2'
 services:
   pivtotal-ingestion:
     build: './pivotal-ingestion'
+  github-ingestion:
+    build: './github-ingestion'
