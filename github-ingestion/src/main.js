@@ -51,4 +51,5 @@ getEvents(githubOwner, githubRepo)
 .then((events) => {
   console.log(events.length);
 }, (err) => {
+  console.error(err);
 });
