@@ -17,5 +17,10 @@
     "bluebird": "^3.4.6",
     "github": "^5.2.2",
     "redis": "^2.6.2"
+  },
+  "devDependencies": {
+    "eslint": "^3.8.1",
+    "eslint-config-airbnb-base": "^9.0.0",
+    "eslint-plugin-import": "^2.0.1"
   }
 }

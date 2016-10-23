@@ -13,5 +13,10 @@
     "babel-cli": "^6.16.0",
     "babel-preset-es2017": "^6.16.0",
     "node-fetch": "^1.6.3"
+  },
+  "devDependencies": {
+    "eslint": "^3.8.1",
+    "eslint-config-airbnb-base": "^9.0.0",
+    "eslint-plugin-import": "^2.0.1"
   }
 }
