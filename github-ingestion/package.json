@@ -15,7 +15,8 @@
     "babel-cli": "^6.16.0",
     "babel-preset-es2017": "^6.16.0",
     "bluebird": "^3.4.6",
-    "github": "^5.2.2"
+    "github": "^5.2.2",
+    "sqlite3": "^3.1.6"
   },
   "devDependencies": {
     "eslint": "^3.8.1",
