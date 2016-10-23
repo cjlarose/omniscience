@@ -1,4 +1,10 @@
 version: '2'
 services:
-  pivtotal-ingestion:
-    build: './pivotal-ingestion'
+  redis:
+    image: redis:3.2.4
+  github-ingestion:
+    build: './github-ingestion'
+    environment:
+      API_TOKEN: $GITHUB_API_TOKEN
+    links:
+      - redis
