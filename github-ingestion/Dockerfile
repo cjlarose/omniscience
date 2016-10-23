@@ -18,4 +18,5 @@ COPY . /usr/src/app
 # Transpile
 RUN yarn run build
 
+EXPOSE 9229
 CMD [ "yarn", "start" ]
