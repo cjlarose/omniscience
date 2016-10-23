@@ -8,3 +8,8 @@ services:
       API_TOKEN: $GITHUB_API_TOKEN
     links:
       - redis
+  pivotal-ingestion:
+    build: './pivotal-ingestion'
+    environment:
+      API_TOKEN: $PIVOTAL_API_TOKEN
+      PROJECT_IDS: $PIVOTAL_PROJECT_IDS
