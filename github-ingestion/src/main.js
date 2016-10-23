@@ -33,17 +33,18 @@ async function getEvents(owner, repo, newerThanEventId = undefined) {
   while (true) {
     for (let i = 0; i < resp.length; i++) {
       const event = resp[i];
+      if (event.id === newerThanEventId) {
+        return events.reverse();
+      }
       events.push(event);
     }
 
     if (github.hasNextPage(resp)) {
       resp = await github.getNextPage(resp, {});
-      console.log(resp);
     } else {
-      break;
+      return events.reverse();
     }
   }
-  return events;
 }
 
 getEvents(githubOwner, githubRepo)
