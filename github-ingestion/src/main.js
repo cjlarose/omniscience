@@ -10,21 +10,18 @@ if (!authToken) {
 
 Promise.promisifyAll(redisApi.RedisClient.prototype);
 
-const redis = new redisApi.createClient({ host: 'redis' });
+const redis = redisApi.createClient({ host: 'redis' });
 const github = new GithubApi({ Promise });
 const watchedRepos = new Set();
 
-github.authenticate({
-  type: "oauth",
-  token: authToken
-});
+github.authenticate({ type: 'oauth', token: authToken });
 
 async function getEvents(owner, repo, newerThanEventId = undefined) {
   const reqOptions = { owner, repo, page: 1, per_page: 100 };
   const events = [];
 
   let resp = await github.activity.getEventsForRepo(reqOptions);
-  while (true) {
+  for (;;) {
     for (let i = 0; i < resp.length; i++) {
       const event = resp[i];
       if (event.id === newerThanEventId) {
@@ -63,7 +60,7 @@ async function beginWatchingKnownRepos() {
   await redis.onAsync('ready');
   const reposKey = 'github-ingestion:repos';
   const repoStrings = await redis.lrangeAsync(reposKey, 0, -1);
-  for (repoString of repoStrings) {
+  for (let repoString of repoStrings) {
     watchedRepos.add(repoString);
     const [owner, repo] = repoString.split('/');
     watchRepo(owner, repo);

@@ -27,28 +27,24 @@ async function allActivitySinceVersion(projectId, sinceVersion) {
 
   const items = [];
 
-  let limit = 500;
+  const limit = 500;
   let offset = 0;
 
-  top:
-  while (true) {
+  for (;;) {
     const resp = await activityRequest(offset, limit);
-    total = parseInt(resp.headers.get('x-tracker-pagination-total'), 10);
+    const total = parseInt(resp.headers.get('x-tracker-pagination-total'), 10);
     const newItems = await resp.json();
-    for (var i = 0; i < newItems.length; i++) {
+    for (let i = 0; i < newItems.length; i += 1) {
       const item = newItems[i];
-      if (item.project_version <= sinceVersion)
-        break top;
+      if (item.project_version <= sinceVersion) {
+        return items.reverse();
+      }
       items.push(item);
-    };
+    }
     offset += limit;
-    if (offset >= total) { break; }
+    if (offset >= total) { return items.reverse(); }
   }
-
-  return items.reverse();
 }
-
-/// activityFromVersion(0)
 
 projectIds.forEach((projectId) => {
   allActivitySinceVersion(projectId, -1)
