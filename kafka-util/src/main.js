@@ -4,8 +4,8 @@ const producer = new Kafka.Producer({
   connectionString: 'kafka:9092',
 });
 
-function publishEvent(topic, eventData) {
-  const metadata = { $createdAt: new Date().toISOString() };
+function publishEvent(topic, eventType, eventData) {
+  const metadata = { $createdAt: new Date().toISOString(), $type: eventType };
   const augmentedEvent = Object.assign({}, eventData, metadata);
   const message = {
     topic,
@@ -24,8 +24,17 @@ function main() {
     case 'add-repo': {
       const [owner, repo] = commandArgs;
       const eventData = { owner, repo };
-      publishEvent('githubRepositories', eventData).then(() => {
+      publishEvent('githubRepositories', 'repositoryAdded', eventData).then(() => {
         console.log(`Successfully added repository ${owner}/${repo}`);
+        process.exit(0);
+      });
+      break;
+    }
+    case 'remove-repo': {
+      const [owner, repo] = commandArgs;
+      const eventData = { owner, repo };
+      publishEvent('githubRepositories', 'repositoryRemoved', eventData).then(() => {
+        console.log(`Successfully removed repository ${owner}/${repo}`);
         process.exit(0);
       });
       break;
