@@ -5,3 +5,9 @@ services:
     command: '/data/github-ingestion.db'
     volumes_from:
       - github-ingestion
+  kafka-util:
+    build: ./kafka-util
+    links:
+      - kafka
+    volumes:
+      - ./kafka-util/src:/usr/src/app/src
