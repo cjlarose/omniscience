@@ -11,3 +11,7 @@ services:
       - kafka
     volumes:
       - ./kafka-util/src:/usr/src/app/src
+  github-ingestion:
+    command: ['yarn', 'run', 'start-dev']
+    volumes:
+      - ./github-ingestion/src:/usr/src/app/src
