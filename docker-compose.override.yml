@@ -1,1 +1,7 @@
 version: '2'
+services:
+  sqlite:
+    build: ./sqlite
+    command: '/data/github-ingestion.db'
+    volumes_from:
+      - github-ingestion
