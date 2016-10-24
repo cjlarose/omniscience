@@ -1,6 +1,6 @@
 const GithubApi = require('github');
 const Promise = require('bluebird');
-const redisApi = require('redis');
+const sqlite3 = require('sqlite3');
 
 const authToken = process.env.API_TOKEN;
 if (!authToken) {
@@ -8,11 +8,10 @@ if (!authToken) {
   process.exit(1);
 }
 
-Promise.promisifyAll(redisApi.RedisClient.prototype);
-
-const redis = redisApi.createClient({ host: 'redis' });
 const github = new GithubApi({ Promise });
-const watchedRepos = new Set();
+const dbFile = '/data/github-ingestion.db';
+const db = new sqlite3.Database(dbFile);
+const watchedRepos = {};
 
 github.authenticate({ type: 'oauth', token: authToken });
 
@@ -44,32 +43,73 @@ async function publishEvents(owner, repo, events) {
   }
 }
 
+function runDbAsync(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function cb(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(this);
+      }
+    });
+  });
+}
+
 async function watchRepo(owner, repo) {
-  while (watchedRepos.has(`${owner}/${repo}`)) {
+  for (;;) {
+    const lastEventId = watchedRepos[`${owner}/${repo}`];
+    if (!lastEventId) {
+      break;
+    }
+
     console.log(`still watching ${owner}/${repo}`);
-    const events = await getEvents(owner, repo);
-    console.log(events.length);
-    await publishEvents(owner, repo, events);
+    const newEvents = await getEvents(owner, repo, lastEventId);
+    console.log(newEvents.length);
+    if (newEvents.length > 0) {
+      await publishEvents(owner, repo, newEvents);
+      const latestEvent = newEvents[newEvents.length - 1];
+      const result = await runDbAsync('UPDATE repos SET last_event_id = ? WHERE owner = ? AND name = ?', [latestEvent.id, owner, repo]);
+
+      const success = result.changes === 1;
+      if (success) {
+        watchedRepos[`${owner}/${repo}`] = latestEvent.id;
+      } else {
+        // since starting, this repo has become unwatched
+        // TODO Make sure to detect this even when there are no new events
+        break;
+      }
+    }
+
     console.log('sleeping for 5 seconds');
     await Promise.delay(5000);
   }
   console.log(`done watching ${owner}/${repo}`);
 }
 
-async function beginWatchingKnownRepos() {
-  await redis.onAsync('ready');
-  const reposKey = 'github-ingestion:repos';
-  const repoStrings = await redis.lrangeAsync(reposKey, 0, -1);
-  for (let repoString of repoStrings) {
-    watchedRepos.add(repoString);
+function beginWatchingKnownRepos() {
+  console.log(watchedRepos);
+  Object.keys(watchedRepos).forEach((repoString) => {
     const [owner, repo] = repoString.split('/');
     watchRepo(owner, repo);
-  }
+  });
 }
 
-redis.on('error', (err) => {
-  console.log('redis error');
-  console.error(err);
-});
+function setupDatabase() {
+  return Promise.all([
+    runDbAsync('CREATE TABLE IF NOT EXISTS repos (owner TEXT, name TEXT, last_event_id TEXT, CONSTRAINT pk PRIMARY KEY (owner, name))'),
+    runDbAsync('CREATE TABLE IF NOT EXISTS consumer_offsets (topic TEXT, offset INTEGER, CONSTRAINT pk PRIMARY KEY (topic))'),
+  ]);
+}
 
-beginWatchingKnownRepos().then(() => {console.log('main done');}, () => console.error(err));
+function main() {
+  db.serialize();
+  setupDatabase().then(() => {
+    db.each('SELECT owner, name, last_event_id FROM repos', (err, row) => {
+      watchedRepos[`${row.owner}/${row.name}`] = row.last_event_id;
+    }, () => {
+      beginWatchingKnownRepos();
+    });
+  });
+}
+
+main();
