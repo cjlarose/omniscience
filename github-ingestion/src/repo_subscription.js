@@ -1,5 +1,6 @@
 const GithubApi = require('github');
 const Promise = require('bluebird');
+const Kafka = require('no-kafka');
 const { db, runDbAsync } = require('./db_util');
 
 const authToken = process.env.API_TOKEN;
@@ -8,9 +9,30 @@ if (!authToken) {
   process.exit(1);
 }
 
+const producer = new Kafka.Producer({ connectionString: 'kafka:9092' });
+
 const github = new GithubApi({ Promise });
 
 github.authenticate({ type: 'oauth', token: authToken });
+
+function publishEvent(topic, eventData) {
+  const metadata = { $createdAt: new Date().toISOString() };
+  const augmentedEvent = Object.assign({}, eventData, metadata);
+  const message = {
+    topic,
+    partition: 0,
+    message: { value: JSON.stringify(augmentedEvent) },
+  };
+
+  return producer.init().then(() => producer.send([message]));
+}
+
+async function publishEvents(owner, repo, events) {
+  for (let i = 0; i < events.length; i += 1) {
+    await publishEvent('githubEvents', { payload: events[i] });
+  }
+  console.log(`${events.length} events from ${owner}/${repo} successfully published`);
+}
 
 async function getEvents(owner, repo, newerThanEventId = undefined) {
   const reqOptions = { owner, repo, page: 1, per_page: 100 };
@@ -31,12 +53,6 @@ async function getEvents(owner, repo, newerThanEventId = undefined) {
     } else {
       return events.reverse();
     }
-  }
-}
-
-async function publishEvents(owner, repo, events) {
-  for (event of events) {
-    console.log(`publishing event ${event.id} of ${owner}/${repo}`);
   }
 }
 
