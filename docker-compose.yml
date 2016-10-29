@@ -16,8 +16,12 @@ services:
     build: './github-ingestion'
     environment:
       API_TOKEN: $GITHUB_API_TOKEN
+    volumes:
+      - github-ingestion-state:/data
   pivotal-ingestion:
     build: './pivotal-ingestion'
     environment:
       API_TOKEN: $PIVOTAL_API_TOKEN
       PROJECT_IDS: $PIVOTAL_PROJECT_IDS
+volumes:
+  github-ingestion-state:
