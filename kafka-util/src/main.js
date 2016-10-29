@@ -23,6 +23,10 @@ function main() {
   switch (command) {
     case 'add-repo': {
       const [owner, repo] = commandArgs;
+      if (!owner || !repo) {
+        console.error('Usage: node src/main.js add-repo owner repo');
+        process.exit(1);
+      }
       const eventData = { owner, repo };
       publishEvent('githubRepositories', 'repositoryAdded', eventData).then(() => {
         console.log(`Successfully added repository ${owner}/${repo}`);
@@ -32,6 +36,10 @@ function main() {
     }
     case 'remove-repo': {
       const [owner, repo] = commandArgs;
+      if (!owner || !repo) {
+        console.error('Usage: node src/main.js remove-repo owner repo');
+        process.exit(1);
+      }
       const eventData = { owner, repo };
       publishEvent('githubRepositories', 'repositoryRemoved', eventData).then(() => {
         console.log(`Successfully removed repository ${owner}/${repo}`);
