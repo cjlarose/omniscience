@@ -1,19 +1,13 @@
-const GithubApi = require('github');
 const Promise = require('bluebird');
 const Kafka = require('no-kafka');
 const { db, runDbAsync } = require('./db_util');
+const { KAFKA_CONNECTION_STRING } = require('./config');
+const { fetchRepoEvents, hasNextPage, getNextPage } = require('./github_events');
 
-const authToken = process.env.API_TOKEN;
-if (!authToken) {
-  console.error('Missing API_TOKEN');
-  process.exit(1);
-}
-
-const producer = new Kafka.Producer({ connectionString: 'kafka:9092', codec: Kafka.COMPRESSION_SNAPPY });
-
-const github = new GithubApi({ Promise });
-
-github.authenticate({ type: 'oauth', token: authToken });
+const producer = new Kafka.Producer({
+  connectionString: KAFKA_CONNECTION_STRING,
+  codec: Kafka.COMPRESSION_SNAPPY,
+});
 
 function publishEvent(topic, eventData) {
   const metadata = { $createdAt: new Date().toISOString() };
@@ -35,21 +29,21 @@ async function publishEvents(owner, repo, events) {
 }
 
 async function getEvents(owner, repo, newerThanEventId = undefined) {
-  const reqOptions = { owner, repo, page: 1, per_page: 100 };
   const events = [];
 
-  let resp = await github.activity.getEventsForRepo(reqOptions);
+  let resp = await fetchRepoEvents(owner, repo, 1, 100);
   for (;;) {
-    for (let i = 0; i < resp.length; i += 1) {
-      const event = resp[i];
+    const newEvents = await resp.json();
+    for (let i = 0; i < newEvents.length; i += 1) {
+      const event = newEvents[i];
       if (event.id === newerThanEventId) {
         return events.reverse();
       }
       events.push(event);
     }
 
-    if (github.hasNextPage(resp)) {
-      resp = await github.getNextPage(resp, {});
+    if (hasNextPage(resp)) {
+      resp = await getNextPage(resp);
     } else {
       return events.reverse();
     }
