@@ -1,4 +1,5 @@
 const { getDbAsync, runDbAsync } = require('./db_util');
+const { watchRepo } = require('./repo_subscription');
 const Kafka = require('no-kafka');
 
 const kafkaConsumer = new Kafka.SimpleConsumer({ connectionString: 'kafka:9092' });
@@ -20,6 +21,7 @@ async function handleRepositoryEvent(event) {
       try {
         await runDbAsync('INSERT INTO repos (owner, name, last_event_id) VALUES (?, ?, ?)', [owner, repo, '-1']);
         console.log(`Now watching repo ${owner}/${repo}`);
+        watchRepo(owner, repo);
       } catch (e) {
         if (e.code === 'SQLITE_CONSTRAINT') {
           console.error(`Repository ${owner}/${repo} already known`);

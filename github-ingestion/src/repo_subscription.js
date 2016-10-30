@@ -1,6 +1,6 @@
 const Promise = require('bluebird');
 const Kafka = require('no-kafka');
-const { db, runDbAsync } = require('./db_util');
+const { db, getDbAsync, runDbAsync } = require('./db_util');
 const { KAFKA_CONNECTION_STRING } = require('./config');
 const { fetchRepoEvents, hasNextPage, getNextPage } = require('./github_events');
 
@@ -51,7 +51,7 @@ async function getEvents(owner, repo, newerThanEventId = undefined) {
 }
 
 function getKnownRepos() {
-  const stmt = db.prepare('SELECT owner, name, last_event_id FROM repos');
+  const stmt = db.prepare('SELECT owner, name FROM repos');
   return new Promise((resolve, reject) => {
     stmt.all([], (err, rows) => {
       if (err) {
@@ -63,26 +63,30 @@ function getKnownRepos() {
   });
 }
 
-async function beginWatchingKnownRepos() {
+async function getLastEventId(owner, repo) {
+  const row = await getDbAsync('SELECT last_event_id FROM repos WHERE owner = ? AND name = ?', [owner, repo]);
+  return row ? row.last_event_id : undefined;
+}
+
+async function watchRepo(owner, repo) {
   for (;;) {
-    const repos = await getKnownRepos();
-    for (let i = 0; i < repos.length; i += 1) {
-      const { owner, name: repo, last_event_id: lastEventId } = repos[i];
-      console.log(owner, repo, lastEventId);
-      const newEvents = await getEvents(owner, repo, lastEventId);
+    const lastEventId = await getLastEventId(owner, repo);
+    if (!lastEventId) {
+      break;
+    }
 
-      if (newEvents.length > 0) {
-        await publishEvents(owner, repo, newEvents);
-        const latestEvent = newEvents[newEvents.length - 1];
-        const result = await runDbAsync('UPDATE repos SET last_event_id = ? WHERE owner = ? AND name = ?', [latestEvent.id, owner, repo]);
+    const newEvents = await getEvents(owner, repo, lastEventId);
+    if (newEvents.length > 0) {
+      await publishEvents(owner, repo, newEvents);
+      const latestEvent = newEvents[newEvents.length - 1];
+      const result = await runDbAsync('UPDATE repos SET last_event_id = ? WHERE owner = ? AND name = ?', [latestEvent.id, owner, repo]);
 
-        const success = result.changes === 1;
-        if (success) {
-          console.log(`Successfully updated last_event_id for repo ${owner}/${repo}`);
-        } else {
-          // repo became unwatched
-          console.log(`${owner}/${repo} is no longer being watched`);
-        }
+      const success = result.changes === 1;
+      if (success) {
+        console.log(`Successfully updated last_event_id for repo ${owner}/${repo}`);
+      } else {
+        // repo became unwatched
+        console.log(`${owner}/${repo} is no longer being watched`);
       }
     }
 
@@ -91,6 +95,15 @@ async function beginWatchingKnownRepos() {
   }
 }
 
+function beginWatchingKnownRepos() {
+  getKnownRepos().then((repos) => {
+    repos.forEach((repo) => {
+      watchRepo(repo.owner, repo.name);
+    });
+  });
+}
+
 module.exports = {
   beginWatchingKnownRepos,
+  watchRepo,
 };
