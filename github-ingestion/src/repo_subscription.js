@@ -28,24 +28,34 @@ async function publishEvents(owner, repo, events) {
   console.log(`${events.length} events from ${owner}/${repo} successfully published`);
 }
 
-async function getEvents(owner, repo, newerThanEventId = undefined) {
-  const events = [];
+function getEventFetcher(owner, repo) {
+  let firstPageETag;
 
-  let resp = await fetchRepoEvents(owner, repo, 1, 100);
-  for (;;) {
-    const newEvents = await resp.json();
-    for (let i = 0; i < newEvents.length; i += 1) {
-      const event = newEvents[i];
-      if (event.id === newerThanEventId) {
-        return events.reverse();
-      }
-      events.push(event);
+  return async function(newerThanEventId) {
+    const events = [];
+
+    let resp = await fetchRepoEvents(owner, repo, 1, 100, firstPageETag);
+    if (resp.status === 304) {
+      return events;
     }
 
-    if (hasNextPage(resp)) {
-      resp = await getNextPage(resp);
-    } else {
-      return events.reverse();
+    firstPageETag = resp.headers.get('Etag').replace('W/', '');
+
+    for (;;) {
+      const newEvents = await resp.json();
+      for (let i = 0; i < newEvents.length; i += 1) {
+        const event = newEvents[i];
+        if (event.id === newerThanEventId) {
+          return events.reverse();
+        }
+        events.push(event);
+      }
+
+      if (hasNextPage(resp)) {
+        resp = await getNextPage(resp);
+      } else {
+        return events.reverse();
+      }
     }
   }
 }
@@ -69,13 +79,14 @@ async function getLastEventId(owner, repo) {
 }
 
 async function watchRepo(owner, repo) {
+  const getEvents = getEventFetcher(owner, repo);
   for (;;) {
     const lastEventId = await getLastEventId(owner, repo);
     if (!lastEventId) {
       break;
     }
 
-    const newEvents = await getEvents(owner, repo, lastEventId);
+    const newEvents = await getEvents(lastEventId);
     if (newEvents.length > 0) {
       await publishEvents(owner, repo, newEvents);
       const latestEvent = newEvents[newEvents.length - 1];

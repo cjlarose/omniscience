@@ -11,11 +11,12 @@ const requestHeaders = {
   Accept: 'application/vnd.github.v3+json',
 };
 
-function fetchRepoEvents(owner, repo, page, perPage) {
+function fetchRepoEvents(owner, repo, page, perPage, etag) {
   const path = `/repos/${owner}/${repo}/events`;
   const query = querystring.stringify({ page, per_page: perPage });
   const url = `${githubBaseUrl}${path}?${query}`;
-  return fetch(url, { method: 'GET', headers: requestHeaders });
+  const headers = Object.assign({}, requestHeaders, { 'If-None-Match': etag });
+  return fetch(url, { method: 'GET', headers });
 }
 
 function hasNextPage(resp) {
