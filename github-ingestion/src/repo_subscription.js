@@ -9,7 +9,7 @@ if (!authToken) {
   process.exit(1);
 }
 
-const producer = new Kafka.Producer({ connectionString: 'kafka:9092' });
+const producer = new Kafka.Producer({ connectionString: 'kafka:9092', codec: Kafka.COMPRESSION_SNAPPY });
 
 const github = new GithubApi({ Promise });
 
@@ -21,7 +21,7 @@ function publishEvent(topic, eventData) {
   const message = {
     topic,
     partition: 0,
-    message: { value: JSON.stringify(augmentedEvent) },
+    message: { value: JSON.stringify(augmentedEvent, null, 4) },
   };
 
   return producer.init().then(() => producer.send([message]));

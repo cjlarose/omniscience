@@ -17,6 +17,7 @@
     "bluebird": "^3.4.6",
     "github": "^5.2.2",
     "no-kafka": "^2.9.0",
+    "snappy": "^5.0.5",
     "sqlite3": "^3.1.6"
   },
   "devDependencies": {
