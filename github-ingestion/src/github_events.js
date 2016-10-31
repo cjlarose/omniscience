@@ -20,7 +20,11 @@ function fetchRepoEvents(owner, repo, page, perPage, etag) {
 }
 
 function hasNextPage(resp) {
-  const links = parseLinkHeader(resp.headers.get('Link'));
+  const headerValue = resp.headers.get('Link');
+  if (!headerValue) {
+    return false;
+  }
+  const links = parseLinkHeader(headerValue);
   return typeof links.next !== 'undefined';
 }
 
