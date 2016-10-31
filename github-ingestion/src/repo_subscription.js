@@ -15,7 +15,7 @@ function publishEvent(topic, eventData) {
   const message = {
     topic,
     partition: 0,
-    message: { value: JSON.stringify(augmentedEvent, null, 4) },
+    message: { value: JSON.stringify(augmentedEvent, null, 2) },
   };
 
   return producer.init().then(() => producer.send([message]));
