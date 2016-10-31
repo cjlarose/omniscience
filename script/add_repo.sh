@@ -1,1 +1,1 @@
-docker-compose run kafka-util add-repo $@
+docker-compose run --rm kafka-util add-repo $@

@@ -1,2 +1,2 @@
 #!/bin/bash
-docker-compose run sqlite
+docker-compose run --rm sqlite
