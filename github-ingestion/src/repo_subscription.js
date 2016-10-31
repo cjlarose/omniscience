@@ -23,7 +23,7 @@ function publishEvent(topic, eventData) {
 
 async function publishEvents(owner, repo, events) {
   for (let i = 0; i < events.length; i += 1) {
-    await publishEvent('githubEvents', { payload: events[i] });
+    await publishEvent('githubEvents', { event: events[i] });
   }
   console.log(`${events.length} events from ${owner}/${repo} successfully published`);
 }
