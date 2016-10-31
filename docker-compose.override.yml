@@ -19,3 +19,7 @@ services:
       - GITHUB_HOST=$GITHUB_HOST
       - GITHUB_PORT=$GITHUB_PORT
       - GITHUB_SCHEME=$GITHUB_SCHEME
+  consumers:
+    command: ['yarn', 'run', 'start-dev']
+    volumes:
+      - ./consumers/src:/usr/src/app/src

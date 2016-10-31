@@ -1,0 +1,25 @@
+{
+  "name": "consumers",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node lib/main.js",
+    "start-dev": "nodemon -L --exec babel-node src/main.js",
+    "build": "babel src -d lib",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-es2017": "^6.16.0",
+    "no-kafka": "^2.9.2",
+    "redux": "^3.6.0",
+    "snappy": "^5.0.5",
+    "sqlite3": "^3.1.8"
+  },
+  "devDependencies": {
+    "eslint": "^3.9.0",
+    "eslint-config-airbnb-base": "^9.0.0",
+    "eslint-plugin-import": "^2.0.1",
+    "nodemon": "^1.11.0"
+  }
+}

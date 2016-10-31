@@ -18,6 +18,8 @@ services:
       API_TOKEN: $GITHUB_API_TOKEN
     volumes:
       - github-ingestion-state:/data
+  consumers:
+    build: './consumers'
 #   pivotal-ingestion:
 #     build: './pivotal-ingestion'
 #     environment:
