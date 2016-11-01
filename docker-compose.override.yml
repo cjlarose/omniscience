@@ -16,9 +16,7 @@ services:
     volumes:
       - ./github-ingestion/src:/usr/src/app/src
     environment:
-      - GITHUB_HOST=$GITHUB_HOST
-      - GITHUB_PORT=$GITHUB_PORT
-      - GITHUB_SCHEME=$GITHUB_SCHEME
+      GITHUB_API_BASE_URL: $GITHUB_API_BASE_URL
   consumers:
     command: ['yarn', 'run', 'start-dev']
     volumes:

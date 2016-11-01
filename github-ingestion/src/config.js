@@ -7,7 +7,5 @@ if (!authToken) {
 module.exports = {
   KAFKA_CONNECTION_STRING: 'kafka:9092',
   API_TOKEN: authToken,
-  GITHUB_HOST: process.env.GITHUB_HOST || 'api.github.com',
-  GITHUB_PORT: process.env.GITHUB_PORT || 443,
-  GITHUB_SCHEME: process.env.GITHUB_SCHEME || 'https',
+  GITHUB_API_BASE_URL: process.env.GITHUB_API_BASE_URL || 'https://api.github.com',
 };
