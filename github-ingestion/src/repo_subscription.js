@@ -28,13 +28,28 @@ async function publishEvents(owner, repo, events) {
   console.log(`${events.length} events from ${owner}/${repo} successfully published`);
 }
 
+async function tryUntilSuccess(f) {
+  let waitTimeMs = 1000;
+
+  for (;;) {
+    try {
+      return await f();
+    } catch (e) {
+      console.error(e.message);
+      console.error(`Trying again in ${waitTimeMs} ms`);
+      await Promise.delay(waitTimeMs);
+      waitTimeMs *= 2;
+    }
+  }
+}
+
 function getEventFetcher(owner, repo) {
   let firstPageETag;
 
   return async function(newerThanEventId) {
     const events = [];
 
-    let resp = await fetchRepoEvents(owner, repo, 1, 100, firstPageETag);
+    let resp = await tryUntilSuccess(() => fetchRepoEvents(owner, repo, 1, 100, firstPageETag));
     if (resp.status === 304) {
       return events;
     }
@@ -52,7 +67,7 @@ function getEventFetcher(owner, repo) {
       }
 
       if (hasNextPage(resp)) {
-        resp = await getNextPage(resp);
+        resp = await tryUntilSuccess(() => getNextPage(resp));
       } else {
         return events.reverse();
       }
