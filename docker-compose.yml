@@ -20,6 +20,8 @@ services:
       - github-ingestion-state:/data
   consumers:
     build: './consumers'
+    volumes:
+      - consumer-state:/data
 #   pivotal-ingestion:
 #     build: './pivotal-ingestion'
 #     environment:
@@ -27,3 +29,4 @@ services:
 #       PROJECT_IDS: $PIVOTAL_PROJECT_IDS
 volumes:
   github-ingestion-state:
+  consumer-state:
