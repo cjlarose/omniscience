@@ -1,9 +1,10 @@
 const redux = require('redux');
 const reducers = require('./reducers/index.js');
 const Kafka = require('no-kafka');
-const { setupDatabase, getDbAsync, runDbAsync, execDbAsync } = require('./db_util');
+const { setupDatabase, getDbAsync, runDbAsync } = require('./db_util');
 
 const kafkaConsumer = new Kafka.SimpleConsumer({ connectionString: 'kafka:9092' });
+const kafkaProducer = new Kafka.Producer({ connectionString: 'kafka:9092' });
 const EVENTS_TOPIC = 'githubEvents';
 
 async function getConsumerState(key, defaultVal) {
@@ -20,10 +21,23 @@ async function getConsumerState(key, defaultVal) {
 async function storeStateAndOffset(state, offset) {
   const stateJSON = JSON.stringify(state);
   const offsetJSON = JSON.stringify(offset);
-  await execDbAsync(`BEGIN TRANSACTION;
-    UPDATE consumer_state SET value = '${stateJSON}' WHERE "key" = 'state';
-    UPDATE consumer_state SET value = '${offsetJSON}' WHERE "key" = 'offset';
-    COMMIT;`);
+  await runDbAsync('BEGIN TRANSACTION');
+  await runDbAsync('UPDATE consumer_state SET value = ? WHERE "key" = ?', [stateJSON, 'state']);
+  await runDbAsync('UPDATE consumer_state SET value = ? WHERE "key" = ?', [offsetJSON, 'offset']);
+  await runDbAsync('COMMIT');
+}
+
+async function publishEvents(store) {
+  const state = store.getState();
+  const messages = Object.keys(state)
+    .map(k => state[k].pendingMessages)
+    .reduce((a, b) => a.concat(b), []);
+
+  await kafkaProducer.init();
+  for (let i = 0; i < messages.length; i += 1) {
+    await kafkaProducer.send(messages[i], { codec: Kafka.COMPRESSION_SNAPPY });
+  }
+  store.dispatch({ type: 'MessagesPublished' });
 }
 
 async function handleMessageSet(store, messageSet) {
@@ -35,8 +49,8 @@ async function handleMessageSet(store, messageSet) {
 
   const lastOffset = messageSet[messageSet.length - 1].offset;
 
+  await publishEvents(store);
   await storeStateAndOffset(store.getState(), lastOffset + 1);
-  // TODO emit all events in reducer state
 }
 
 async function main() {

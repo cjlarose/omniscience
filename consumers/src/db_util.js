@@ -28,18 +28,6 @@ function getDbAsync(sql, params = []) {
   });
 }
 
-function execDbAsync(sql) {
-  return new Promise((resolve, reject) => {
-    db.exec(sql, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
 function setupDatabase() {
   return runDbAsync('CREATE TABLE IF NOT EXISTS consumer_state (key TEXT, value TEXT, CONSTRAINT pk PRIMARY KEY (key))');
 }
@@ -48,6 +36,5 @@ module.exports = {
   db,
   runDbAsync,
   getDbAsync,
-  execDbAsync,
   setupDatabase,
 };
