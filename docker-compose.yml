@@ -1,9 +1,12 @@
 version: '2'
 services:
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: wurstmeister/zookeeper:3.4.6
     ports:
       - "2181:2181"
+    volumes:
+      - zookeeper-conf:/opt/zookeeper-3.4.6/conf
+      - zookeeper-data:/opt/zookeeper-3.4.6/data
   kafka:
     image: wurstmeister/kafka
     ports:
@@ -12,6 +15,9 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: 1
+    volumes:
+      - kafka-data:/kafka
   github-ingestion:
     build: './github-ingestion'
     environment:
@@ -30,3 +36,6 @@ services:
 volumes:
   github-ingestion-state:
   consumer-state:
+  kafka-data:
+  zookeeper-conf:
+  zookeeper-data:
