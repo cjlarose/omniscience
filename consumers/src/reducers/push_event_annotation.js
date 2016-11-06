@@ -30,7 +30,6 @@ function annotatePushEvent(state = initialState, action) {
       if (!pushEventOnWatchedRef(action.event)) {
         return state;
       }
-      //return updateRepo(state, repoId, (oldRepoState) => {
       const oldRepoState = state.repos[repoId] || initialRepoState;
       if (oldRepoState.mergedPrs[payload.head]) {
         console.log(`${repoName}: Push event for PR #${oldRepoState.mergedPrs[payload.head]} observed!`);
