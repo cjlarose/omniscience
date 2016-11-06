@@ -35,7 +35,7 @@ function annotatePushEvent(state = initialState, action) {
       if (oldRepoState.mergedPrs[payload.head]) {
         console.log(`${repoName}: Push event for PR #${oldRepoState.mergedPrs[payload.head]} observed!`);
         const pullRequestNumber = oldRepoState.mergedPrs[payload.head];
-        const messageValue = { type: 'pullRequestMergeCommitPushed', event: action.event, repoId, pullRequestNumber };
+        const messageValue = { type: 'pullRequestMergeCommitPushed', event: action.event, pullRequestNumber };
         const newEvent = { topic: 'pushEventAnnotations', partition: 0, message: { value: JSON.stringify(messageValue, null, 2) } };
         return Object.assign({}, state, { pendingMessages: [...state.pendingMessages, newEvent] });
       }
@@ -43,7 +43,7 @@ function annotatePushEvent(state = initialState, action) {
       console.log('Known PRs');
       console.log(JSON.stringify(oldRepoState.mergedPrs, null, 2));
 
-      const messageValue = { type: 'unreviewedCommitPushed', event: action.event, repoId };
+      const messageValue = { type: 'unreviewedCommitPushed', event: action.event };
       const newEvent = { topic: 'pushEventAnnotations', partition: 0, message: { value: JSON.stringify(messageValue, null, 2) } };
       return Object.assign({}, state, { pendingMessages: [...state.pendingMessages, newEvent] });
     }
