@@ -2,6 +2,8 @@ const Kafka = require('no-kafka');
 
 const producer = new Kafka.Producer({
   connectionString: 'kafka:9092',
+  requiredAcks: -1,
+  batch: { size: 0, maxWait: 0 },
 });
 
 function publishEvent(topic, eventType, eventData) {
