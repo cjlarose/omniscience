@@ -6,6 +6,8 @@ const { fetchRepoEvents, hasNextPage, getNextPage } = require('./github_events')
 
 const producer = new Kafka.Producer({
   connectionString: KAFKA_CONNECTION_STRING,
+  requiredAcks: -1,
+  batch: { size: 0, maxWait: 0 },
   codec: Kafka.COMPRESSION_SNAPPY,
 });
 

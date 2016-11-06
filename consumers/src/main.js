@@ -4,7 +4,12 @@ const Kafka = require('no-kafka');
 const { setupDatabase, getDbAsync, runDbAsync } = require('./db_util');
 
 const kafkaConsumer = new Kafka.SimpleConsumer({ connectionString: 'kafka:9092' });
-const kafkaProducer = new Kafka.Producer({ connectionString: 'kafka:9092' });
+const kafkaProducer = new Kafka.Producer({
+  connectionString: 'kafka:9092',
+  requiredAcks: -1,
+  batch: { size: 0, maxWait: 0 },
+  codec: Kafka.COMPRESSION_SNAPPY,
+});
 const TOPICS = ['githubEvents', 'pushEventAnnotations'];
 
 async function getConsumerState(key, defaultVal) {
@@ -33,7 +38,7 @@ async function publishEvents(store) {
 
   await kafkaProducer.init();
   for (let i = 0; i < messages.length; i += 1) {
-    await kafkaProducer.send(messages[i], { codec: Kafka.COMPRESSION_SNAPPY });
+    await kafkaProducer.send(messages[i]);
   }
   store.dispatch({ type: 'MessagesPublished' });
 }
