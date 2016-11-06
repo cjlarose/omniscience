@@ -1,5 +1,8 @@
 version: '2'
 services:
+  kafka:
+    environment:
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
   sqlite:
     build: ./sqlite
     command: '/data/github-ingestion.db'
