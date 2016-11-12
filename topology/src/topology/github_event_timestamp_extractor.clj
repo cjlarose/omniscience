@@ -7,7 +7,8 @@
     :methods [[extract [org.apache.kafka.clients.consumer.ConsumerRecord long] long]]))
 
 (defn -extract [_ record]
-  (let [message-value (json/read-str (.value record))]
-    (-> message-value
-        (get-in ["event" "created_at"])
-        (coerce/to-long))))
+  (-> record
+      (.value)
+      (json/read-str)
+      (get-in ["created_at"])
+      (coerce/to-long)))
