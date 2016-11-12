@@ -1,5 +1,6 @@
 (ns topology.core
-  (:require topology.github-event-timestamp-extractor)
+  (:require topology.github-event-timestamp-extractor
+            [clojure.data.json :as json])
   (:import [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper]
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
            [org.apache.kafka.common.serialization Serdes]
@@ -24,7 +25,7 @@
         config  (StreamsConfig. props)]
     (->
       (.stream builder input-topic)
-      (.mapValues (reify ValueMapper (apply [_ v] ((comp str count) v))))
+      (.mapValues (reify ValueMapper (apply [_ v] (-> v (json/read-str) (get-in ["event" "type"])))))
       (.to "my-output-topic"))
 
     (.start (KafkaStreams. builder config))
