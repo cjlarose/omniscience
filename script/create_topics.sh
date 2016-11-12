@@ -1,4 +1,4 @@
-docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
+docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh \
   --zookeeper zookeeper:2181 \
   --create \
   --topic githubRepositories \
@@ -7,7 +7,7 @@ docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
   --config retention.ms=9223372036854775807 \
   --config retention.bytes=-1
 
-docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
+docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh \
   --zookeeper zookeeper:2181 \
   --create \
   --topic pivotalBoards \
@@ -16,7 +16,7 @@ docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
   --config retention.ms=9223372036854775807 \
   --config retention.bytes=-1
 
-docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
+docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh \
   --zookeeper zookeeper:2181 \
   --create \
   --topic githubEvents \
@@ -25,7 +25,7 @@ docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
   --config retention.ms=9223372036854775807 \
   --config retention.bytes=-1
 
-docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.0.1/bin/kafka-topics.sh \
+docker exec omniscience_kafka_1 /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh \
   --zookeeper zookeeper:2181 \
   --create \
   --topic pushEventAnnotations \
