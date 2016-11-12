@@ -1,23 +1,32 @@
 const Promise = require('bluebird');
 const Kafka = require('no-kafka');
+
 const { db, getDbAsync, runDbAsync } = require('./db_util');
 const { KAFKA_CONNECTION_STRING } = require('./config');
 const { fetchRepoEvents, hasNextPage, getNextPage } = require('./github_events');
+
+const OUTPUT_TOPIC = 'githubEvents';
+
+function messagePartitioner(topic, partitions, message) {
+  const numPartitions = partitions.length;
+  return message.key % numPartitions;
+}
 
 const producer = new Kafka.Producer({
   connectionString: KAFKA_CONNECTION_STRING,
   requiredAcks: -1,
   batch: { size: 0, maxWait: 0 },
   codec: Kafka.COMPRESSION_SNAPPY,
+  partitioner: messagePartitioner,
 });
 
-function publishEvent(topic, eventData) {
-  const metadata = { $createdAt: new Date().toISOString() };
-  const augmentedEvent = Object.assign({}, eventData, metadata);
+function publishEvent(owner, repo, eventData) {
   const message = {
-    topic,
-    partition: 0,
-    message: { value: JSON.stringify(augmentedEvent, null, 2) },
+    topic: OUTPUT_TOPIC,
+    message: {
+      key: eventData.repo.id,
+      value: JSON.stringify(eventData),
+    },
   };
 
   return producer.init().then(() => producer.send([message]));
@@ -25,7 +34,7 @@ function publishEvent(topic, eventData) {
 
 async function publishEvents(owner, repo, events) {
   for (let i = 0; i < events.length; i += 1) {
-    await publishEvent('githubEvents', { event: events[i] });
+    await publishEvent(owner, repo, events[i]);
   }
   console.log(`${events.length} events from ${owner}/${repo} successfully published`);
 }
