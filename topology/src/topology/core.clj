@@ -50,6 +50,10 @@
       (.filter eventFilter)
       (.to "my-output-topic"))
 
-    (.start (KafkaStreams. builder config))
-    (Thread/sleep (* 60000 10))
-    (prn "stopping")))
+    (let [streams (KafkaStreams. builder config)
+          shutdown-hook (reify Runnable
+                          (run [_]
+                            (println "Shutting down NAOW")
+                            (.close streams)))]
+      (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown-hook))
+      (.start streams))))
