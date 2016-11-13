@@ -11,7 +11,7 @@
 (def props
   {StreamsConfig/APPLICATION_ID_CONFIG,    "omniscience"
    StreamsConfig/BOOTSTRAP_SERVERS_CONFIG, "kafka:9092"
-   StreamsConfig/KEY_SERDE_CLASS_CONFIG,   (.getName (.getClass (Serdes/String)))
+   StreamsConfig/KEY_SERDE_CLASS_CONFIG,   (.getName (.getClass (Serdes/Long)))
    StreamsConfig/VALUE_SERDE_CLASS_CONFIG, (.getName (.getClass (Serdes/String)))
    StreamsConfig/TIMESTAMP_EXTRACTOR_CLASS_CONFIG (.getName GithubEventTimestampExtractor)})
 
