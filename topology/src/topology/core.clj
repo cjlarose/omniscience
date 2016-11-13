@@ -1,7 +1,8 @@
 (ns topology.core
   (:require topology.github-event-timestamp-extractor
-            [clojure.data.json :as json])
-  (:import [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper]
+            [clojure.data.json :as json]
+            [clojure.string :refer [starts-with?]])
+  (:import [org.apache.kafka.streams.kstream KStreamBuilder Predicate]
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
            [org.apache.kafka.common.serialization Serdes]
            [topology.github-event-timestamp-extractor GithubEventTimestampExtractor])
@@ -17,6 +18,26 @@
 (def input-topic
   (into-array String ["githubEvents"]))
 
+(defn closed-pr-event? [ev]
+  (and (= (ev "type") "PullRequestEvent")
+       (= (get-in ev ["payload" "action"]) "closed")))
+
+(defn push-event? [ev]
+  (= (ev "type") "PushEvent"))
+
+(defn push-event-on-watched-ref? [ev]
+  ;; TODO Allow git-flow config here
+  (and (push-event? ev)
+       (let [ref (get-in ev ["payload" "ref"])]
+         (or (= ref "refs/heads/develop")
+             (starts-with? ref "refs/heads/release/")))))
+
+(def eventFilter
+  (reify Predicate
+    (test [_ _ v]
+      (let [parsed (json/read-str v)]
+        (boolean (or (closed-pr-event? parsed) (push-event-on-watched-ref? parsed)))))))
+
 (defn -main [& args]
   (prn "starting")
   (prn (.getName GithubEventTimestampExtractor))
@@ -25,7 +46,8 @@
         config  (StreamsConfig. props)]
     (->
       (.stream builder input-topic)
-      (.mapValues (reify ValueMapper (apply [_ v] (-> v (json/read-str) (get-in ["event" "type"])))))
+      ;;(.mapValues (reify ValueMapper (apply [_ v] (-> v (json/read-str) (get-in ["event" "type"])))))
+      (.filter eventFilter)
       (.to "my-output-topic"))
 
     (.start (KafkaStreams. builder config))
