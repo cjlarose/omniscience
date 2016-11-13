@@ -18,9 +18,10 @@
 (def input-topic
   (into-array String ["githubEvents"]))
 
-(defn closed-pr-event? [ev]
+(defn merged-pr-event? [ev]
   (and (= (ev "type") "PullRequestEvent")
-       (= (get-in ev ["payload" "action"]) "closed")))
+       (= (get-in ev ["payload" "action"]) "closed")
+       (get-in ev ["payload" "pull_request" "merged"])))
 
 (defn push-event? [ev]
   (= (ev "type") "PushEvent"))
@@ -36,7 +37,7 @@
   (reify Predicate
     (test [_ _ v]
       (let [parsed (json/read-str v)]
-        (boolean (or (closed-pr-event? parsed) (push-event-on-watched-ref? parsed)))))))
+        (boolean (or (merged-pr-event? parsed) (push-event-on-watched-ref? parsed)))))))
 
 (defn -main [& args]
   (prn "starting")
