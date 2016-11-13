@@ -9,7 +9,8 @@ const OUTPUT_TOPIC = 'githubEvents';
 
 function messagePartitioner(topic, partitions, message) {
   const numPartitions = partitions.length;
-  return message.key % numPartitions;
+  const repoId = message.key.readInt32BE(4);
+  return repoId % numPartitions;
 }
 
 const producer = new Kafka.Producer({
@@ -21,12 +22,13 @@ const producer = new Kafka.Producer({
 });
 
 function publishEvent(owner, repo, eventData) {
+  const key = Buffer.alloc(8);
+  key.writeInt32BE(eventData.repo.id, 4);
+
+  const value = Buffer.from(JSON.stringify(eventData), 'utf8');
   const message = {
     topic: OUTPUT_TOPIC,
-    message: {
-      key: eventData.repo.id,
-      value: JSON.stringify(eventData),
-    },
+    message: { key, value },
   };
 
   return producer.init().then(() => producer.send([message]));
