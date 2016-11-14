@@ -1,7 +1,6 @@
 (ns topology.core
   (:require topology.github-event-timestamp-extractor
-            [clojure.data.json :as json]
-            [clojure.string :refer [starts-with?]])
+            [clojure.data.json :as json])
   (:import [org.apache.kafka.streams.kstream KStreamBuilder Predicate Reducer ValueJoiner]
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
            [org.apache.kafka.common.serialization Serdes]
