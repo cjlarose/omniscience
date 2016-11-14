@@ -26,13 +26,6 @@
 (defn push-event? [ev]
   (= (ev "type") "PushEvent"))
 
-(defn push-event-on-watched-ref? [ev]
-  ;; TODO Allow git-flow config here
-  (and (push-event? ev)
-       (let [ref (get-in ev ["payload" "ref"])]
-         (or (= ref "refs/heads/develop")
-             (starts-with? ref "refs/heads/release/")))))
-
 (defn push-event-on-develop? [ev]
   ;; TODO Allow git-flow config here
   (and (push-event? ev)
