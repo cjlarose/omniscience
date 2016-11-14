@@ -48,7 +48,7 @@
 
 (def last-merged-pr-reducer
   (reify Reducer
-    (apply [_ v1 v2]
+    (apply [_ _ v2]
       v2)))
 
 (def push-event-annotator
