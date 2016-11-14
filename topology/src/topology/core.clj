@@ -78,7 +78,7 @@
                                    (.filter (eventFilter push-event-on-develop?)))
         push-event-annotations (.leftJoin push-events-on-develop last-merged-pr-table push-event-annotator)]
     (-> push-event-annotations
-        (.to "my-output-topic"))
+        (.to "pushEventAnnotations"))
 
     (let [streams (KafkaStreams. builder config)
           shutdown-hook (reify Runnable
