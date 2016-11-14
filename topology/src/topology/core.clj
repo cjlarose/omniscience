@@ -28,6 +28,11 @@
        (= (get-in ev ["payload" "action"]) "closed")
        (get-in ev ["payload" "pull_request" "merged"])))
 
+(defn merged-into-develop-pr-event? [ev]
+  (and (merged-pr-event? ev)
+       (= (get-in ev ["payload" "pull_request" "base" "ref"]
+          (:develop-branch git-flow-config)))))
+
 (defn push-event? [ev]
   (= (ev "type") "PushEvent"))
 
@@ -66,7 +71,7 @@
         config  (StreamsConfig. props)
         github-events (.stream builder input-topic)
         last-merged-pr-table (-> github-events
-                                 (.filter (eventFilter merged-pr-event?))
+                                 (.filter (eventFilter merged-into-develop-pr-event?))
                                  (.groupByKey)
                                  (.reduce last-merged-pr-reducer "last-merged-pr"))
         push-events-on-develop (-> github-events
