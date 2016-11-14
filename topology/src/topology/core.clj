@@ -15,6 +15,11 @@
    StreamsConfig/VALUE_SERDE_CLASS_CONFIG, (.getName (.getClass (Serdes/String)))
    StreamsConfig/TIMESTAMP_EXTRACTOR_CLASS_CONFIG (.getName GithubEventTimestampExtractor)})
 
+(def git-flow-config
+  {:master-branch "master"
+   :develop-branch "develop"
+   :release-prefix "release/"})
+
 (def input-topic
   (into-array String ["githubEvents"]))
 
@@ -27,9 +32,9 @@
   (= (ev "type") "PushEvent"))
 
 (defn push-event-on-develop? [ev]
-  ;; TODO Allow git-flow config here
   (and (push-event? ev)
-       (= (get-in ev ["payload" "ref"]) "refs/heads/develop")))
+       (= (get-in ev ["payload" "ref"])
+          (str "refs/heads/" (:develop-branch git-flow-config)))))
 
 (defn eventFilter [p]
   (reify Predicate
