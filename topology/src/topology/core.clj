@@ -2,7 +2,7 @@
   (:require topology.github-event-timestamp-extractor
             [clojure.data.json :as json]
             [clojure.string :refer [starts-with?]])
-  (:import [org.apache.kafka.streams.kstream KStreamBuilder Predicate]
+  (:import [org.apache.kafka.streams.kstream KStreamBuilder Predicate Reducer]
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
            [org.apache.kafka.common.serialization Serdes]
            [topology.github-event-timestamp-extractor GithubEventTimestampExtractor])
@@ -33,11 +33,16 @@
          (or (= ref "refs/heads/develop")
              (starts-with? ref "refs/heads/release/")))))
 
-(def eventFilter
+(defn eventFilter [p]
   (reify Predicate
     (test [_ _ v]
       (let [parsed (json/read-str v)]
-        (boolean (or (merged-pr-event? parsed) (push-event-on-watched-ref? parsed)))))))
+        ((comp boolean p) parsed)))))
+
+(def last-merged-pr-reducer
+  (reify Reducer
+    (apply [_ v1 v2]
+      v2)))
 
 (defn -main [& args]
   (prn "starting")
@@ -47,8 +52,11 @@
         config  (StreamsConfig. props)]
     (->
       (.stream builder input-topic)
-      ;;(.mapValues (reify ValueMapper (apply [_ v] (-> v (json/read-str) (get-in ["event" "type"])))))
-      (.filter eventFilter)
+      ;; (.mapValues (reify ValueMapper (apply [_ v] (-> v (json/read-str) (get-in ["event" "type"])))))
+      ;; (.filter eventFilter)
+      (.filter (eventFilter merged-pr-event?))
+      (.groupByKey)
+      (.reduce last-merged-pr-reducer "last-merged-pr")
       (.to "my-output-topic"))
 
     (let [streams (KafkaStreams. builder config)
