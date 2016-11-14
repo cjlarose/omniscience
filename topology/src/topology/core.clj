@@ -45,18 +45,15 @@
       v2)))
 
 (defn -main [& args]
-  (prn "starting")
-  (prn (.getName GithubEventTimestampExtractor))
-  (prn props)
   (let [builder (KStreamBuilder.)
-        config  (StreamsConfig. props)]
+        config  (StreamsConfig. props)
+        github-events (.stream builder input-topic)
+        last-merged-pr-table (-> github-events
+                                 (.filter (eventFilter merged-pr-event?))
+                                 (.groupByKey)
+                                 (.reduce last-merged-pr-reducer "last-merged-pr"))]
     (->
-      (.stream builder input-topic)
-      ;; (.mapValues (reify ValueMapper (apply [_ v] (-> v (json/read-str) (get-in ["event" "type"])))))
-      ;; (.filter eventFilter)
-      (.filter (eventFilter merged-pr-event?))
-      (.groupByKey)
-      (.reduce last-merged-pr-reducer "last-merged-pr")
+      last-merged-pr-table
       (.to "my-output-topic"))
 
     (let [streams (KafkaStreams. builder config)
