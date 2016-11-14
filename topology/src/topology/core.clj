@@ -2,7 +2,7 @@
   (:require topology.github-event-timestamp-extractor
             [clojure.data.json :as json]
             [clojure.string :refer [starts-with?]])
-  (:import [org.apache.kafka.streams.kstream KStreamBuilder Predicate Reducer]
+  (:import [org.apache.kafka.streams.kstream KStreamBuilder Predicate Reducer ValueJoiner]
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
            [org.apache.kafka.common.serialization Serdes]
            [topology.github-event-timestamp-extractor GithubEventTimestampExtractor])
@@ -33,6 +33,11 @@
          (or (= ref "refs/heads/develop")
              (starts-with? ref "refs/heads/release/")))))
 
+(defn push-event-on-develop? [ev]
+  ;; TODO Allow git-flow config here
+  (and (push-event? ev)
+       (= (get-in ev ["payload" "ref"]) "refs/heads/develop")))
+
 (defn eventFilter [p]
   (reify Predicate
     (test [_ _ v]
@@ -44,6 +49,20 @@
     (apply [_ v1 v2]
       v2)))
 
+(def push-event-annotator
+  ;; TODO: consider what happens when last-merged-pr is nil
+  (reify ValueJoiner
+    (apply [_ push-event-json last-merged-pr-json]
+      (let [push-event (json/read-str push-event-json)
+            last-merged-pr (json/read-str last-merged-pr-json)
+            push-event-head-sha (get-in push-event ["payload" "head"])
+            pr-merge-commit-sha (get-in last-merged-pr ["payload" "pull_request" "merge_commit_sha"])
+            match? (= push-event-head-sha pr-merge-commit-sha)
+            repo-name (get-in push-event ["repo" "name"])]
+      (if match?
+        (str repo-name ": PR #" (get-in last-merged-pr ["payload" "pull_request" "number"]) " merged!")
+        (str repo-name ": Rogue push commit " push-event-head-sha))))))
+
 (defn -main [& args]
   (let [builder (KStreamBuilder.)
         config  (StreamsConfig. props)
@@ -51,10 +70,12 @@
         last-merged-pr-table (-> github-events
                                  (.filter (eventFilter merged-pr-event?))
                                  (.groupByKey)
-                                 (.reduce last-merged-pr-reducer "last-merged-pr"))]
-    (->
-      last-merged-pr-table
-      (.to "my-output-topic"))
+                                 (.reduce last-merged-pr-reducer "last-merged-pr"))
+        push-events-on-develop (-> github-events
+                                   (.filter (eventFilter push-event-on-develop?)))
+        push-event-annotations (.leftJoin push-events-on-develop last-merged-pr-table push-event-annotator)]
+    (-> push-event-annotations
+        (.to "my-output-topic"))
 
     (let [streams (KafkaStreams. builder config)
           shutdown-hook (reify Runnable
