@@ -10,5 +10,5 @@
   (-> record
       (.value)
       (json/read-str)
-      (get-in ["created_at"])
+      (get "created_at")
       (coerce/to-long)))
