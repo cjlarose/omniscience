@@ -25,10 +25,6 @@ services:
       API_TOKEN: $GITHUB_API_TOKEN
     volumes:
       - github-ingestion-state:/data
-  consumers:
-    build: './consumers'
-    volumes:
-      - consumer-state:/data
   topology:
     build: './topology'
 #   pivotal-ingestion:
@@ -38,7 +34,6 @@ services:
 #       PROJECT_IDS: $PIVOTAL_PROJECT_IDS
 volumes:
   github-ingestion-state:
-  consumer-state:
   kafka-data:
   zookeeper-conf:
   zookeeper-data:
